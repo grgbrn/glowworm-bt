@@ -11,9 +11,16 @@
 BLEUart bleuart;
 
 // Function prototypes for packetparser.cpp
-uint8_t readPacket (BLEUart *ble_uart, uint16_t timeout);
+uint8_t readCompletePacket (BLEUart *ble_uart, uint16_t timeout);
 float   parsefloat (uint8_t *buffer);
 void    printHex   (const uint8_t * data, const uint32_t numBytes);
+
+uint8_t checkPacket(BLEUart *ble_uart, uint16_t timeout);
+void resetPacket();
+boolean isPacketComplete();
+boolean verifyPacket();
+void dumpPacket();
+
 
 // Packet buffer
 extern uint8_t packetbuffer[];
@@ -99,53 +106,57 @@ void startAdv(void)
   Bluefruit.Advertising.start(0);                // 0 = Don't stop advertising after n seconds  
 }
 
+// only called if we have a valid command packet
+void parseCommand() {
+  // Color
+  if (packetbuffer[1] == 'C') {
+    uint8_t red = packetbuffer[2];
+    uint8_t green = packetbuffer[3];
+    uint8_t blue = packetbuffer[4];
+    
+    Serial.print ("RGB #");
+    if (red < 0x10) Serial.print("0");
+    Serial.print(red, HEX);
+    if (green < 0x10) Serial.print("0");
+    Serial.print(green, HEX);
+    if (blue < 0x10) Serial.print("0");
+    Serial.println(blue, HEX);
+
+    // set current global color
+    currentColor = strip.Color(red, green, blue);
+  }
+
+  // Buttons
+  if (packetbuffer[1] == 'B') {
+    uint8_t buttnum = packetbuffer[2] - '0';
+    boolean pressed = packetbuffer[3] - '0';
+    Serial.print ("Button "); Serial.print(buttnum);
+    if (pressed) {
+      Serial.println(" pressed");
+    } else {
+      Serial.println(" released");
+    }
+  }
+}
 
 void loop() {
-  // poll the bluetooth device for new data
-  uint8_t len = readPacket(&bleuart, 500);
-  if (len > 0) {
-  // Got a packet!
-  // printHex(packetbuffer, len);
 
-    // Color
-    if (packetbuffer[1] == 'C') {
-      uint8_t red = packetbuffer[2];
-      uint8_t green = packetbuffer[3];
-      uint8_t blue = packetbuffer[4];
-      
-      Serial.print ("RGB #");
-      if (red < 0x10) Serial.print("0");
-      Serial.print(red, HEX);
-      if (green < 0x10) Serial.print("0");
-      Serial.print(green, HEX);
-      if (blue < 0x10) Serial.print("0");
-      Serial.println(blue, HEX);
-
-      // set current global color
-      currentColor = strip.Color(red, green, blue);
-    }
-
-    // Buttons
-    if (packetbuffer[1] == 'B') {
-      uint8_t buttnum = packetbuffer[2] - '0';
-      boolean pressed = packetbuffer[3] - '0';
-      Serial.print ("Button "); Serial.print(buttnum);
-      if (pressed) {
-        Serial.println(" pressed");
+  // now less blocky
+  if (checkPacket(&bleuart, 5)) {
+    if (isPacketComplete()) {
+      if (verifyPacket()) {
+        parseCommand();
       } else {
-        Serial.println(" released");
+        Serial.print("Checksum mismatch in packet : ");
+        dumpPacket();
       }
+      resetPacket();
     }
   }
 
   // original non-polling version is essentially:
   // colorWipe(currentColor, 50);
   // colorWipe(strip.Color(0,0,0), 50);
-
-  // show vars are:
-  // currentColor = strip.Color(0,0,255);
-  // currentIndex = 0;
-  // currentState = true;
 
   if (currentIndex < strip.numPixels()) {
     currentIndex++;
@@ -157,7 +168,7 @@ void loop() {
   strip.setPixelColor(currentIndex, currentState ? currentColor : strip.Color(0,0,0));
   strip.show();
   
-  //delay(25);
+  delay(25);
 
   //rainbow(20);
   //rainbowCycle(20);

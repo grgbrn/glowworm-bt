@@ -23,7 +23,7 @@ uint8_t packetbuffer[READ_BUFSIZE+1];
     @brief  Casts the four bytes at the specified address to a float
 */
 /**************************************************************************/
-float parsefloat(uint8_t *buffer) 
+float parsefloat(uint8_t *buffer)
 {
   float f;
   memcpy(&f, buffer, 4);
@@ -31,7 +31,7 @@ float parsefloat(uint8_t *buffer)
 }
 
 /**************************************************************************/
-/*! 
+/*!
     @brief  Prints a hexadecimal value in plain characters
     @param  data      Pointer to the byte data
     @param  numBytes  Data length in bytes
@@ -40,7 +40,7 @@ float parsefloat(uint8_t *buffer)
 void printHex(const uint8_t * data, const uint32_t numBytes)
 {
   uint32_t szPos;
-  for (szPos=0; szPos < numBytes; szPos++) 
+  for (szPos=0; szPos < numBytes; szPos++)
   {
     Serial.print(F("0x"));
     // Append leading 0 for small values
@@ -67,7 +67,7 @@ void printHex(const uint8_t * data, const uint32_t numBytes)
     @brief  Waits for incoming data and parses it
 */
 /**************************************************************************/
-uint8_t readPacket(BLEUart *ble_uart, uint16_t timeout) 
+uint8_t readCompletePacket(BLEUart *ble_uart, uint16_t timeout)
 {
   uint16_t origtimeout = timeout, replyidx = 0;
 
@@ -99,22 +99,22 @@ uint8_t readPacket(BLEUart *ble_uart, uint16_t timeout)
       replyidx++;
       timeout = origtimeout;
     }
-    
+
     if (timeout == 0) break;
     delay(1);
   }
 
   packetbuffer[replyidx] = 0;  // null term
 
-  if (!replyidx)  // no data or timeout 
+  if (!replyidx)  // no data or timeout
     return 0;
   if (packetbuffer[0] != '!')  // doesn't start with '!' packet beginning
     return 0;
-  
+
   // check checksum!
   uint8_t xsum = 0;
   uint8_t checksum = packetbuffer[replyidx-1];
-  
+
   for (uint8_t i=0; i<replyidx-1; i++) {
     xsum += packetbuffer[i];
   }
@@ -127,7 +127,82 @@ uint8_t readPacket(BLEUart *ble_uart, uint16_t timeout)
     printHex(packetbuffer, replyidx+1);
     return 0;
   }
-  
+
   // checksum passed!
   return replyidx;
+}
+
+// decomposed readPacket
+
+uint16_t packetidx = 0; // index into packetbuffer
+
+void resetPacket()
+{
+  memset(packetbuffer, 0, READ_BUFSIZE);
+  packetidx = 0;
+}
+
+boolean isPacketComplete()
+{
+  return ((packetbuffer[1] == 'A') && (packetidx == PACKET_ACC_LEN)) ||
+    ((packetbuffer[1] == 'G') && (packetidx == PACKET_GYRO_LEN)) ||
+    ((packetbuffer[1] == 'M') && (packetidx == PACKET_MAG_LEN)) ||
+    ((packetbuffer[1] == 'Q') && (packetidx == PACKET_QUAT_LEN)) ||
+    ((packetbuffer[1] == 'B') && (packetidx == PACKET_BUTTON_LEN)) ||
+    ((packetbuffer[1] == 'C') && (packetidx == PACKET_COLOR_LEN)) ||
+    ((packetbuffer[1] == 'L') && (packetidx == PACKET_LOCATION_LEN));
+}
+
+uint8_t checkPacket(BLEUart *ble_uart, uint16_t timeout)
+{
+  uint16_t origtimeout = timeout;
+
+  while (timeout--) {
+    if (packetidx >= READ_BUFSIZE) break; // XXX and likely buffer overflow
+
+    if (isPacketComplete()) {
+      break;
+    }
+
+    while (ble_uart->available()) {
+      char c =  ble_uart->read();
+      if (c == '!') {
+        packetidx = 0;
+      }
+      // XXX buffer overflow here - malformed packets > READ_BUFSIZE
+      packetbuffer[packetidx] = c;
+      packetidx++;
+      timeout = origtimeout;
+    }
+
+    if (timeout == 0) return 0;
+    delay(1);
+  }
+
+  // should only end up here if we have a complete packet
+  packetbuffer[packetidx] = 0;  // null term
+  return 1;
+}
+
+// only call this on a complete packet!
+boolean verifyPacket()
+{
+  if (packetbuffer[0] != '!')  // doesn't start with '!' packet beginning
+    return false;
+
+  // check checksum!
+  uint8_t xsum = 0;
+  uint8_t checksum = packetbuffer[packetidx-1];
+
+  for (uint8_t i=0; i<packetidx-1; i++) {
+    xsum += packetbuffer[i];
+  }
+  xsum = ~xsum;
+
+  return xsum == checksum;
+}
+
+void dumpPacket()
+{
+  printHex(packetbuffer, packetidx);
 }
