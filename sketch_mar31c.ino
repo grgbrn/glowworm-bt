@@ -74,7 +74,7 @@ void setup() {
 
   // setup neopixels
   strip.begin();
-  strip.setBrightness(50);
+  strip.setBrightness(80);
   strip.show(); // Initialize all pixels to 'off'
 }
 
@@ -151,6 +151,8 @@ void loop() {
         dumpPacket();
       }
       resetPacket();
+    } else {
+        Serial.print("incomplete packet, waiting to process!");
     }
   }
 
