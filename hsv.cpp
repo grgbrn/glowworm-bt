@@ -1,14 +1,26 @@
 #include <Adafruit_NeoPixel.h>
 
-// based off pull request on neopixel lib
-// https://github.com/adafruit/Adafruit_NeoPixel/pull/114/files
-
-// h ranges from 0-1536 (blargh!)
-// s is 0-255
-// v is 0-255
-
-// way more details here:
-// http://www.vagrearg.org/content/hsvrgb
+/*
+ * hsv2rgb library copied from here:
+ * http://www.vagrearg.org/content/hsvrgb
+ * 
+ * based off a pull request on the neopixel lib
+ * https://github.com/adafruit/Adafruit_NeoPixel/pull/114/files
+ * 
+ * h value ranges from 0-1536 (not 360)
+ * s is 0-255
+ * v is 0-255
+ * 
+ * handy reference:
+ * red        0       0
+ * yellow    60     256
+ * green    120     512
+ * cyan     180     768
+ * blue     240    1024
+ * purple   300    1280
+ * 
+ * XXX make some defines for these... and a hsv_color_t typedef
+*/
 
 uint32_t hsv2rgb(uint16_t h, uint8_t s, uint8_t v) {
   
