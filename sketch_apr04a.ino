@@ -7,7 +7,7 @@
 extern uint32_t hsv2rgb(uint16_t h, uint8_t s, uint8_t v);
 
 #define PIXEL_COUNT 50
-#define PIN 2
+#define PIN 3
 
 #define ANIMATION_SLOTS 4
 
