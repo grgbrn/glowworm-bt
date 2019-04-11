@@ -35,6 +35,42 @@ uint8_t breathe_intensity(unsigned long millis) {
   return int(val);
 }
 
+
+struct hsvcolor
+{
+  uint16_t  h;
+  uint8_t   s;
+  uint8_t   v;
+};
+
+hsvcolor lustrePalette[] = {
+  {1109, 153, 237},
+  {1126, 249, 183},
+  {1143, 168, 160},
+  {1160, 216, 201},
+  {1181, 221, 119},
+  {1181, 239, 132},
+  {119, 175, 219},
+  {1194, 183, 145},
+  {1245, 178, 252},
+  {1245, 198, 219},
+  {1250, 193, 221},
+  {1275, 244, 214},
+  {1309, 237, 193},
+  {132, 249, 188},
+  {1331, 204, 234},
+  {1352, 244, 249},
+  {136, 214, 242},
+  {1527, 193, 211},
+  {153, 247, 234},
+  {1531, 140, 237},
+  {162, 175, 247},
+  {187, 226, 237},
+  {34, 226, 186},
+  {93, 209, 188}
+};
+
+
 class Animation
 {
   public:
@@ -45,7 +81,7 @@ class Animation
   unsigned long   startTime;
   boolean         active;
 
-  uint16_t        hue;
+  int             colorIndex;
   int             pixelIndex;
 
   void init(int id, unsigned long startTime) {
@@ -53,26 +89,27 @@ class Animation
     this->startTime = startTime;
     this->active = false;
 
-    uint16_t hues[] = {0,512,1024,1280}; // XXX
-    this->hue = hues[random(0,4)]; // XXX
+    this->colorIndex = random(0,24); // index into global palette array
     this->pixelIndex = random(0, PIXEL_COUNT);
 
     Serial.print("* anim:");
     Serial.print(this->pixelIndex);
     Serial.print(" startTime:");
     Serial.print(this->startTime);
-    Serial.print(" hue:");
-    Serial.print(this->hue);
+    Serial.print(" color:");
+    Serial.print(this->colorIndex);
     Serial.println();
   }
 
   void tick(unsigned long ms) {
-    if (!this->active) return;
+    if (!this->active) return;    
 
     int r = ms - this->startTime; // number of ms we've been running
+
+    hsvcolor color = lustrePalette[this->colorIndex];
     
     uint8_t v = breathe_intensity(ms - this->startTime);
-    uint32_t currentColor = hsv2rgb(this->hue, 255, v);
+    uint32_t currentColor = hsv2rgb(color.h, color.s, v);
    
     strip.setPixelColor(this->pixelIndex, currentColor);
 
@@ -88,7 +125,6 @@ class Animation
 };
 
 Animation anim[ANIMATION_SLOTS];
-uint16_t hues[] = {0,512,1024,1280};
 
 
 void setup() {
