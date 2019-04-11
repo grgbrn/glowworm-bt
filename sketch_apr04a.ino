@@ -7,7 +7,7 @@
 extern uint32_t hsv2rgb(uint16_t h, uint8_t s, uint8_t v);
 
 #define PIXEL_COUNT 50
-#define PIN 3
+#define PIN 4
 
 #define ANIMATION_SLOTS 4
 
@@ -37,8 +37,9 @@ uint8_t breathe_intensity(unsigned long millis) {
 
 class Animation
 {
+  public:
+  
   int                 id;
-  Adafruit_NeoPixel *strip;
 
   // reassigned on each new animation start
   unsigned long   startTime;
@@ -46,32 +47,23 @@ class Animation
 
   uint16_t        hue;
   int             pixelIndex;
-  
-  public:
-  // XXX only necessary because we're using default ctor for static array simplicity
-  void init(int id, Adafruit_NeoPixel *s) {
-    this->id = id;
-    this->strip = s;    
-  }
 
-  void debug() {
+  void init(int id, unsigned long startTime) {
+    this->id = id;
+    this->startTime = startTime;
+    this->active = false;
+
+    uint16_t hues[] = {0,512,1024,1280}; // XXX
+    this->hue = hues[random(0,4)]; // XXX
+    this->pixelIndex = random(0, PIXEL_COUNT);
+
     Serial.print("* anim:");
-    Serial.print(this->id);
+    Serial.print(this->pixelIndex);
+    Serial.print(" startTime:");
+    Serial.print(this->startTime);
     Serial.print(" hue:");
     Serial.print(this->hue);
     Serial.println();
-  }
-
-  void start(unsigned long ms, uint16_t hue, int pixelIndex) {
-    if (this->active) {
-      Serial.println("trying to start an already active show");
-      return;
-    }
-
-    this->active = true;
-    this->startTime = ms;
-    this->hue = hue;
-    this->pixelIndex = pixelIndex;
   }
 
   void tick(unsigned long ms) {
@@ -80,14 +72,12 @@ class Animation
     uint8_t v = breathe_intensity(ms - this->startTime);
     uint32_t currentColor = hsv2rgb(this->hue, 255, v);
    
-    this->strip->setPixelColor(this->pixelIndex, currentColor);
+    strip.setPixelColor(this->pixelIndex, currentColor);
   }  
 };
 
 Animation anim[ANIMATION_SLOTS];
 uint16_t hues[] = {0,512,1024,1280};
-int tick = 0;
-int started = 0;
 
 
 void setup() {
@@ -97,27 +87,26 @@ void setup() {
   strip.begin();
   strip.setBrightness(80);
   strip.show(); // Initialize all pixels to 'off'
+
   
+  unsigned long now = millis();
   for (int i=0; i<ANIMATION_SLOTS; i++) {
-    anim[i].init(i, &strip);
+    unsigned long startTime = now + (2000 * i);
+    anim[i].init(i, startTime);
   }
 }
 
 void loop() {
 
   unsigned long ms = millis();
-
-  if (tick++ % 500 == 0) {
-    if (started < ANIMATION_SLOTS) {
-      Serial.print("starting animation:");
-      Serial.println(started);
-
-      anim[started].start(ms, hues[started], started);
-      started++;
-    }
-  }
   
   for (int i=0; i<ANIMATION_SLOTS; i++) {
+    if (!anim[i].active && ms >= anim[i].startTime) {
+      Serial.print("starting animation:");
+      Serial.println(i);
+      anim[i].active = true;
+    }
+    
     anim[i].tick(ms);
   }
 
