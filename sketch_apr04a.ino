@@ -9,7 +9,7 @@ extern uint32_t hsv2rgb(uint16_t h, uint8_t s, uint8_t v);
 #define PIXEL_COUNT 50
 #define PIN 4
 
-#define ANIMATION_SLOTS 4
+#define ANIMATION_SLOTS 40
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -68,11 +68,22 @@ class Animation
 
   void tick(unsigned long ms) {
     if (!this->active) return;
+
+    int r = ms - this->startTime; // number of ms we've been running
     
     uint8_t v = breathe_intensity(ms - this->startTime);
     uint32_t currentColor = hsv2rgb(this->hue, 255, v);
    
     strip.setPixelColor(this->pixelIndex, currentColor);
+
+    if (r > 4000 && v == 0) { // XXX randomize this runtime
+      this->active = false;
+      Serial.print("* resetting:");
+      Serial.println(this->id);
+
+      unsigned long startTime = ms + (1000 * random(0,4));
+      this->init(this->id, startTime);
+    }
   }  
 };
 
@@ -91,7 +102,7 @@ void setup() {
   
   unsigned long now = millis();
   for (int i=0; i<ANIMATION_SLOTS; i++) {
-    unsigned long startTime = now + (2000 * i);
+    unsigned long startTime = now + (500 * i);
     anim[i].init(i, startTime);
   }
 }
