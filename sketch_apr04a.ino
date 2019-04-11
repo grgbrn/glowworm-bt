@@ -105,9 +105,9 @@ class Animation
   
   int                 id;
 
-  // reassigned on each new animation start
   unsigned long   startTime;
   boolean         active;
+  boolean         sync; // to synchronize start on v=0
 
   int             colorIndex;
   int             pixelIndex;
@@ -116,6 +116,7 @@ class Animation
     this->id = id;
     this->startTime = startTime;
     this->active = false;
+    this->sync = false;
 
     this->colorIndex = random(0,24); // index into global palette array
     this->pixelIndex = random(0, PIXEL_COUNT);
@@ -133,13 +134,21 @@ class Animation
     if (!this->active) return;    
 
     int r = ms - this->startTime; // number of ms we've been running
+    uint8_t v = breathe_intensity(ms - this->startTime);
+
+    // v may be > 0 for our initial frame, which looks bad. so if we
+    // haven't synced our start to v=0, just wait
+    if (!this->sync) {
+      if (v > 0) {
+        return;
+      } else {
+        this->sync = true;
+      }
+    }
 
     // XXX make the palette customizable
     hsvcolor color = primaryPalette[this->colorIndex];
-    
-    uint8_t v = breathe_intensity(ms - this->startTime);
     uint32_t currentColor = hsv2rgb(color.h, color.s, v);
-   
     strip.setPixelColor(this->pixelIndex, currentColor);
 
     if (r > 4000 && v == 0) { // XXX randomize this runtime
