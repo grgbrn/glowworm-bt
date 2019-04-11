@@ -9,7 +9,7 @@ extern uint32_t hsv2rgb(uint16_t h, uint8_t s, uint8_t v);
 #define PIXEL_COUNT 50
 #define PIN 4
 
-#define ANIMATION_SLOTS 40
+#define ANIMATION_SLOTS 32
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
@@ -99,6 +99,21 @@ hsvcolor primaryPalette[] = {
 };
 
 
+// bitset to track which lights are actively animating
+uint64_t busyPixels = 0;
+
+int chooseRandomPixel() {
+  int n;
+  while (1) {
+    n = random(0, PIXEL_COUNT);
+    if (bitRead(busyPixels, n) == 0) {
+      bitSet(busyPixels, n);
+      return n;
+    }
+  }
+}
+
+
 class Animation
 {
   public:
@@ -119,7 +134,8 @@ class Animation
     this->sync = false;
 
     this->colorIndex = random(0,24); // index into global palette array
-    this->pixelIndex = random(0, PIXEL_COUNT);
+    this->pixelIndex = chooseRandomPixel();
+    //bitSet(busyPixels, this->pixelIndex);
 
     Serial.print("* anim:");
     Serial.print(this->pixelIndex);
@@ -128,6 +144,14 @@ class Animation
     Serial.print(" color:");
     Serial.print(this->colorIndex);
     Serial.println();
+  }
+
+  void reset() {
+    this->active = false;
+    bitClear(busyPixels, this->pixelIndex);
+
+    Serial.print("* resetting:");
+    Serial.println(this->id);
   }
 
   void tick(unsigned long ms) {
@@ -152,9 +176,7 @@ class Animation
     strip.setPixelColor(this->pixelIndex, currentColor);
 
     if (r > 4000 && v == 0) { // XXX randomize this runtime
-      this->active = false;
-      Serial.print("* resetting:");
-      Serial.println(this->id);
+      this->reset();
 
       unsigned long startTime = ms + (1000 * random(0,4));
       this->init(this->id, startTime);
@@ -163,7 +185,6 @@ class Animation
 };
 
 Animation anim[ANIMATION_SLOTS];
-
 
 void setup() {
   Serial.begin(115200);
