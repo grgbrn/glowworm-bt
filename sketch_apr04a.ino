@@ -71,6 +71,34 @@ hsvcolor lustrePalette[] = {
 };
 
 
+hsvcolor primaryPalette[] = {
+  {0, 255, 0},
+  {64, 255, 0},
+  {128, 255, 0},
+  {192, 255, 0},
+  {256, 255, 0},
+  {320, 255, 0},
+  {384, 255, 0},
+  {448, 255, 0},
+  {512, 255, 0},
+  {576, 255, 0},
+  {640, 255, 0},
+  {704, 255, 0},
+  {768, 255, 0},
+  {832, 255, 0},
+  {896, 255, 0},
+  {960, 255, 0},
+  {1024, 255, 0},
+  {1088, 255, 0},
+  {1152, 255, 0},
+  {1216, 255, 0},
+  {1280, 255, 0},
+  {1344, 255, 0},
+  {1408, 255, 0},
+  {1472, 255, 0}
+};
+
+
 class Animation
 {
   public:
@@ -106,7 +134,8 @@ class Animation
 
     int r = ms - this->startTime; // number of ms we've been running
 
-    hsvcolor color = lustrePalette[this->colorIndex];
+    // XXX make the palette customizable
+    hsvcolor color = primaryPalette[this->colorIndex];
     
     uint8_t v = breathe_intensity(ms - this->startTime);
     uint32_t currentColor = hsv2rgb(color.h, color.s, v);
