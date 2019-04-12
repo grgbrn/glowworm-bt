@@ -142,6 +142,9 @@ hsvcolor springPalette[] = {
   {256, 181, 226}
 };
 
+// this pointer can be changed over bluetooth
+hsvcolor* globalPalette = &lustrePalette[0];
+
 
 class Animation
 {
@@ -196,8 +199,7 @@ class Animation
       }
     }
 
-    // XXX make the palette customizable
-    hsvcolor color = springPalette[this->colorIndex];
+    hsvcolor color = globalPalette[this->colorIndex];
     uint32_t currentColor = hsv2rgb(color.h, color.s, v);
     strip.setPixelColor(this->pixelIndex, currentColor);
 
@@ -317,15 +319,19 @@ void parseCommand() {
     switch (buttnum) {
       case 1:
         Serial.println("choose palette 1");
+        globalPalette = &lustrePalette[0];
         break;
       case 2:
         Serial.println("choose palette 2");
+        globalPalette = &primaryPalette[0];
         break;
       case 3:
         Serial.println("choose palette 3");
+        globalPalette = &springPalette[0];
         break;
       case 4:
         Serial.println("choose palette 4");
+        // XXX need a fourth palette!
         break;
       case 5:
         Serial.println("up arrow");
