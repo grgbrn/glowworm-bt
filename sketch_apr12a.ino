@@ -267,6 +267,13 @@ void setup() {
   strip.begin();
   strip.setBrightness(80);
   strip.show(); // Initialize all pixels to 'off'
+
+  // init animations
+  unsigned long now = millis();
+  for (int i=0; i<ANIMATION_SLOTS; i++) {
+    unsigned long startTime = now + (500 * i);
+    anim[i].init(i, startTime);
+  }
 }
 
 void startAdv(void)
@@ -332,7 +339,7 @@ void parseCommand() {
 
 void loop() {
 
-  // now less blocky
+  // poll bluetooth for incoming commands (shouldn't block)
   if (checkPacket(&bleuart, 5)) {
     if (isPacketComplete()) {
       if (verifyPacket()) {
@@ -347,19 +354,20 @@ void loop() {
     }
   }
 
-  // original non-polling version is essentially:
-  // colorWipe(currentColor, 50);
-  // colorWipe(strip.Color(0,0,0), 50);
-
-  if (currentIndex < strip.numPixels()) {
-    currentIndex++;
-  } else {
-    currentIndex = 0;
-    currentState = !currentState;
+  // update next animation frames
+  unsigned long ms = millis();
+  
+  for (int i=0; i<ANIMATION_SLOTS; i++) {
+    if (!anim[i].active && ms >= anim[i].startTime) {
+      Serial.print("starting animation:");
+      Serial.println(i);
+      anim[i].active = true;
+    }
+    
+    anim[i].tick(ms);
   }
   
-  strip.setPixelColor(currentIndex, currentState ? currentColor : strip.Color(0,0,0));
+  // push updates to the strip and sleep  
   strip.show();
-  
-  delay(25);
+  delay(10);
 }
