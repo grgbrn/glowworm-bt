@@ -231,6 +231,7 @@ class Animation
 #define ANIMATION_SLOTS 32
 
 Animation anim[ANIMATION_SLOTS];
+int globalBrightness = 80;
 
 
 void setup() {
@@ -258,7 +259,7 @@ void setup() {
 
   // setup neopixels
   strip.begin();
-  strip.setBrightness(80);
+  strip.setBrightness(globalBrightness);
   strip.show(); // Initialize all pixels to 'off'
 
   // init animations
@@ -345,9 +346,21 @@ void parseCommand() {
         break;
       case 5:
         Serial.println("up arrow");
+        if (globalBrightness < 100) {
+          globalBrightness += 10;
+          strip.setBrightness(globalBrightness);
+          Serial.print("setting brightness:");
+          Serial.println(globalBrightness);
+        }
         break;
       case 6:
         Serial.println("down arrow");
+        if (globalBrightness >= 10) {
+          globalBrightness -= 10;
+          strip.setBrightness(globalBrightness);
+          Serial.print("setting brightness:");
+          Serial.println(globalBrightness);
+        }
         break;
       case 7:
         Serial.println("left arrow");
