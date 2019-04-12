@@ -143,26 +143,11 @@ hsvcolor springPalette[] = {
 };
 
 
-// bitset to track which lights are actively animating
-uint64_t busyPixels = 0;
-
-int chooseRandomPixel() {
-  int n;
-  while (1) {
-    n = random(0, PIXEL_COUNT);
-    if (bitRead(busyPixels, n) == 0) {
-      bitSet(busyPixels, n);
-      return n;
-    }
-  }
-}
-
-
 class Animation
 {
   public:
   
-  int                 id;
+  int             id;
 
   unsigned long   startTime;
   boolean         active;
@@ -178,8 +163,7 @@ class Animation
     this->sync = false;
 
     this->colorIndex = random(0,24); // index into global palette array
-    this->pixelIndex = chooseRandomPixel();
-    //bitSet(busyPixels, this->pixelIndex);
+    this->pixelIndex = id;
 
     Serial.print("* anim:");
     Serial.print(this->pixelIndex);
@@ -192,8 +176,6 @@ class Animation
 
   void reset() {
     this->active = false;
-    bitClear(busyPixels, this->pixelIndex);
-
     Serial.print("* resetting:");
     Serial.println(this->id);
   }
@@ -228,9 +210,10 @@ class Animation
   }  
 };
 
-#define ANIMATION_SLOTS 32
 
-Animation anim[ANIMATION_SLOTS];
+// new regime! let's try one animation per pixel with no
+// reallocation.. just delays
+Animation anim[PIXEL_COUNT];
 int globalBrightness = 80;
 
 
@@ -264,7 +247,7 @@ void setup() {
 
   // init animations
   unsigned long now = millis();
-  for (int i=0; i<ANIMATION_SLOTS; i++) {
+  for (int i=0; i<PIXEL_COUNT; i++) {
     unsigned long startTime = now + (500 * i);
     anim[i].init(i, startTime);
   }
@@ -392,7 +375,7 @@ void loop() {
   // update next animation frames
   unsigned long ms = millis();
   
-  for (int i=0; i<ANIMATION_SLOTS; i++) {
+  for (int i=0; i<PIXEL_COUNT; i++) {
     if (!anim[i].active && ms >= anim[i].startTime) {
       Serial.print("starting animation:");
       Serial.println(i);
