@@ -165,19 +165,19 @@ class Animation
     this->colorIndex = random(0,24); // index into global palette array
     this->pixelIndex = id;
 
-    Serial.print("* anim:");
-    Serial.print(this->pixelIndex);
-    Serial.print(" startTime:");
-    Serial.print(this->startTime);
-    Serial.print(" color:");
-    Serial.print(this->colorIndex);
-    Serial.println();
+    //Serial.print("* anim:");
+    //Serial.print(this->pixelIndex);
+    //Serial.print(" startTime:");
+    //Serial.print(this->startTime);
+    //Serial.print(" color:");
+    //Serial.print(this->colorIndex);
+    //Serial.println();
   }
 
   void reset() {
     this->active = false;
-    Serial.print("* resetting:");
-    Serial.println(this->id);
+    //Serial.print("* resetting:");
+    //Serial.println(this->id);
   }
 
   void tick(unsigned long ms) {
@@ -377,8 +377,8 @@ void loop() {
   
   for (int i=0; i<PIXEL_COUNT; i++) {
     if (!anim[i].active && ms >= anim[i].startTime) {
-      Serial.print("starting animation:");
-      Serial.println(i);
+      //Serial.print("starting animation:");
+      //Serial.println(i);
       anim[i].active = true;
     }
     
