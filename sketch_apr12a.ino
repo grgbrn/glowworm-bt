@@ -233,13 +233,6 @@ class Animation
 Animation anim[ANIMATION_SLOTS];
 
 
-//
-// show vars
-//
-uint32_t currentColor = strip.Color(0,0,255);
-uint8_t  currentIndex = 0;
-boolean  currentState = true;
-
 void setup() {
   // setup from bluefruit controller sketch
   Serial.begin(115200);
@@ -306,6 +299,8 @@ void startAdv(void)
 
 // only called if we have a valid command packet
 void parseCommand() {
+
+  /* no color input for now - need code convert RGB->HSV
   // Color
   if (packetbuffer[1] == 'C') {
     uint8_t red = packetbuffer[2];
@@ -323,16 +318,43 @@ void parseCommand() {
     // set current global color
     currentColor = strip.Color(red, green, blue);
   }
+  */
 
   // Buttons
   if (packetbuffer[1] == 'B') {
     uint8_t buttnum = packetbuffer[2] - '0';
     boolean pressed = packetbuffer[3] - '0';
-    Serial.print ("Button "); Serial.print(buttnum);
+
+    // only act on release
     if (pressed) {
-      Serial.println(" pressed");
-    } else {
-      Serial.println(" released");
+      return;
+    }
+
+    switch (buttnum) {
+      case 1:
+        Serial.println("choose palette 1");
+        break;
+      case 2:
+        Serial.println("choose palette 2");
+        break;
+      case 3:
+        Serial.println("choose palette 3");
+        break;
+      case 4:
+        Serial.println("choose palette 4");
+        break;
+      case 5:
+        Serial.println("up arrow");
+        break;
+      case 6:
+        Serial.println("down arrow");
+        break;
+      case 7:
+        Serial.println("left arrow");
+        break;
+      case 8:
+        Serial.println("right arrow");
+        break;
     }
   }
 }
