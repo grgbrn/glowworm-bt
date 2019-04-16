@@ -25,7 +25,9 @@ void dumpPacket();
 // Packet buffer
 extern uint8_t packetbuffer[];
 
-#define PIN 4
+// "prod" board is pin=3, soldered in
+// "dev" bench board is pin=4 (pin 3 seems twitchy)
+#define PIN 3
 
 // Parameter 1 = number of pixels in strip
 // Parameter 2 = Arduino pin number (most are valid)
